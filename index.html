@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="logo.jpg">
+<meta name="theme-color" content="#000000">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>St. Angelo's - Dynamic Price & Order Total Calculator</title>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --secondary: #0d9488;
+            --text-dark: #1f2937;
+            --light-bg: #f8fafc;
+            --border-color: #e2e8f0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f1f5f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .main-wrapper {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+            max-width: 1400px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .container, .order-container, .discount-container, .summary-container {
+            background: white;
+            padding: 25px 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            width: 100%;
+            max-width: 310px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .container {
+            text-align: center;
+        }
+        .container img.logo {
+            display: block;
+            margin: 0 auto 12px auto;
+            max-width: 70px;
+            height: auto;
+            border-radius: 50%;
+        }
+        h2 {
+            margin-top: 0;
+            margin-bottom: 5px;
+            color: var(--primary);
+            font-size: 1.35rem;
+            text-align: center;
+        }
+        p.subtitle {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .search-box-wrapper {
+            position: relative;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 14px;
+            font-size: 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            box-sizing: border-box;
+            outline: none;
+            transition: all 0.2s ease;
+            background-color: #fff;
+        }
+        input[type="text"]:focus {
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+        }
+        #result {
+            margin-top: 10px;
+            font-size: 16px;
+            color: var(--text-dark);
+            min-height: 50px;
+            padding: 10px;
+            background-color: var(--light-bg);
+            border-radius: 8px;
+            border: 1px dashed var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .test-name-display {
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 15px;
+        }
+        .price-tag {
+            color: var(--secondary);
+            font-weight: 700;
+            font-size: 16px;
+        }
+        .promo-tag {
+            font-size: 11px;
+            color: #d97706;
+            font-weight: 600;
+        }
+        .not-found {
+            color: #ef4444;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .placeholder-text {
+            color: #94a3b8;
+            font-size: 13px;
+            font-weight: normal;
+        }
+        .order-list, .discount-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 15px 0;
+            max-height: 180px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--light-bg);
+        }
+        .order-item, .discount-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 13px;
+            cursor: grab;
+            background: #fff;
+        }
+        .order-item:active, .discount-item:active {
+            cursor: grabbing;
+        }
+        .order-item:last-child, .discount-item:last-child {
+            border-bottom: none;
+        }
+        .order-item-details, .discount-item-details {
+            display: flex;
+            flex-direction: column;
+        }
+        .order-item-name, .discount-item-name {
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+        .order-item-price, .discount-item-price {
+            color: var(--secondary);
+            font-weight: 600;
+        }
+        .remove-btn {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: bold;
+            padding: 0 4px;
+        }
+        .remove-btn:hover {
+            color: #dc2626;
+        }
+        .total-section {
+            border-top: 2px solid var(--border-color);
+            padding-top: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .total-amount {
+            color: var(--secondary);
+            font-size: 18px;
+        }
+        .empty-order {
+            padding: 20px;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 13px;
+        }
+        .order-container, .discount-container {
+            border: 2px dashed #cbd5e1;
+            transition: background-color 0.2s;
+        }
+        .order-container.drag-over, .discount-container.drag-over {
+            background-color: #f0fdfa;
+            border-color: #0d9488;
+        }
+        .summary-container {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border: 2px solid var(--primary);
+        }
+        /* Autocomplete Suggestions Dropdown */
+        #suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 180px;
+            overflow-y: auto;
+            text-align: left;
+            z-index: 10;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .suggestion-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            font-size: 13px;
+            border-bottom: 1px solid #f1f5f9;
+            transition: background 0.15s;
+            display: flex;
+            justify-content: space-between;
+        }
+        .suggestion-item:hover {
+            background-color: #f8fafc;
+            color: var(--secondary);
+        }
+        .suggestion-price {
+            font-weight: 600;
+            color: #0d9488;
+        }
+        .hint-text {
+            font-size: 11px;
+            color: #64748b;
+            text-align: center;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-wrapper">
+        <!-- Lookup Box -->
+        <div class="container">
+            <img src="logo.jpg" alt="Logo" class="logo">
+            <h2>St. Angelo's Clinic</h2>
+            <p class="subtitle">Diagnostic Test Price Lookup</p>
+            <div class="search-box-wrapper">
+                <input type="text" id="searchInput" placeholder="Type test name & press Enter..." oninput="handleInput()" onkeydown="handleKeyDown(event)" autocomplete="off">
+                <div id="suggestions"></div>
+            </div>
+            <div class="hint-text">Click suggestion or press <b>Enter</b> to add test</div>
+            <div id="result">
+                <span class="placeholder-text">Start typing to inspect a test...</span>
+            </div>
+        </div>
+
+        <!-- Order Cart & Total Box (Now accepts drop back from Senior Box) -->
+        <div class="order-container" id="orderBox" ondragover="allowDrop(event, 'orderBox')" ondragleave="removeDragOver(event, 'orderBox')" ondrop="dropToRegular(event)">
+            <div>
+                <h2>Selected Tests</h2>
+                <p class="subtitle">Drag items between boxes</p>
+                <ul id="orderList" class="order-list">
+                    <li class="empty-order">No tests added yet</li>
+                </ul>
+            </div>
+            <div class="total-section">
+                <span>Regular Total:</span>
+                <span id="totalAmount" class="total-amount">₱0.00</span>
+            </div>
+        </div>
+
+        <!-- Senior Citizen Discount Box -->
+        <div class="discount-container" id="discountBox" ondragover="allowDrop(event, 'discountBox')" ondragleave="removeDragOver(event, 'discountBox')" ondrop="dropToDiscount(event)">
+            <div>
+                <h2>Senior Discount</h2>
+                <p class="subtitle">20% Off (Drop items here)</p>
+                <ul id="discountList" class="discount-list">
+                    <li class="empty-order">Drag items here</li>
+                </ul>
+            </div>
+            <div>
+                <div class="total-section" style="font-size: 13px; border-top: 1px solid var(--border-color); padding-top: 6px;">
+                    <span>Subtotal:</span>
+                    <span id="discountSubtotal">₱0.00</span>
+                </div>
+                <div class="total-section" style="font-size: 13px; border-top: none; padding-top: 2px;">
+                    <span>Less 20%:</span>
+                    <span id="discountAmount" style="color: #ef4444;">₱0.00</span>
+                </div>
+                <div class="total-section" style="font-size: 14px;">
+                    <span>Senior Total:</span>
+                    <span id="seniorTotalAmount" style="color: #0d9488; font-size: 16px;">₱0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Combined Net Total Box -->
+        <div class="summary-container">
+            <div>
+                <h2>Net Summary</h2>
+                <p class="subtitle">Combined Total Breakdown</p>
+                <div style="font-size: 13px; color: var(--text-dark); display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Regular Total:</span>
+                        <span id="summaryRegular" style="font-weight: 600;">₱0.00</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Senior Net Total:</span>
+                        <span id="summarySenior" style="font-weight: 600;">₱0.00</span>
+                    </div>
+                </div>
+            </div>
+            <div class="total-section" style="border-top: 2px solid var(--primary); margin-top: 20px;">
+                <span>Combined Net:</span>
+                <span id="combinedTotalAmount" class="total-amount" style="color: var(--primary); font-size: 20px;">₱0.00</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const testPrices = {
+            "fbs": { price: 300, display: "₱ 300" },
+            "rbs": { price: 300, display: "₱ 300" },
+            "ppbs": { price: 350, display: "₱ 350" },
+            "ogct": { price: 800, display: "₱ 800" },
+            "ogtt": { price: 850, display: "₱ 850" },
+            "bun": { price: 300, display: "₱ 300" },
+            "creatinine": { price: 300, display: "₱ 300" },
+            "bua": { price: 300, display: "₱ 300" },
+            "cholesterol": { price: 300, display: "₱ 300" },
+            "triglycerides": { price: 400, display: "₱ 400" },
+            "hdl (direct)": { price: 400, display: "₱400" },
+            "hdl(direct)": { price: 400, display: "₱ 400" },
+            "bilirubin (tb,db,ib)": { price: 750, display: "₱ 750" },
+            "total protein": { price: 350, display: "₱ 350" },
+            "albumin": { price: 300, display: "₱ 300" },
+            "tpag": { price: 800, display: "₱ 800" },
+            "hba1c": { price: 850, display: "₱ 850" },
+            "na (sodium)": { price: 400, display: "₱ 400" },
+            "k (potassium)": { price: 400, display: "₱ 400" },
+            "cl (chloride)": { price: 400, display: "₱ 400" },
+            "calcium": { price: 600, display: "₱ 600" },
+            "magnesium": { price: 500, display: "₱ 500" },
+            "uric acid": { price: 600, display: "₱ 600" },
+            "amylase": { price: 700, display: "₱ 700" },
+            "calcium total": { price: 400, display: "₱ 400" },
+            "calcium-ionized": { price: 600, display: "₱ 600" },
+            "inorganic phosphorus": { price: 650, display: "₱ 650" },
+            "total iron": { price: 750, display: "₱ 750" },
+            "tibc total iron": { price: 850, display: "₱ 850" },
+            "chem 5 / magic 5": { price: 800, display: "₱ 800" },
+            "chem 6 / magic 6": { price: 900, display: "₱ 900" },
+            "chem 5 / magic 5 ": { price: 800, display: "₱ 800" },
+            "chem 8 / magic 8": { price: 850, display: "₱ 850", promo: "(Promo Price)" },
+            "chem 10 / magic 10": { price: 1050, display: "₱ 1,050", promo: "(Promo Price)" },
+            "chem 12 / magic 12": { price: 1250, display: "₱ 1,250", promo: "(Promo Price)" },
+            "chem 15 / magic 15": { price: 5000, display: "₱ 5,000" },
+            "chem 20 / magic 20": { price: 6750, display: "₱ 6,750" },
+            "chem 25 / magic 25": { price: 6750, display: "₱ 6,750" },
+            "tc": { price: 1250, display: "₱ 1,250" },
+            "crea": { price: 700, display: "₱ 700" },
+            "lipid profile": { price: 1250, display: "₱ 1,250" },
+            "liver profile": { price: 2300, display: "₱ 2,300" },
+            "kidney profile": { price: 700, display: "₱ 700" },
+            "alt/gpt": { price: 400, display: "₱ 400" },
+            "ast/got": { price: 400, display: "₱ 400" },
+            "ggtp": { price: 600, display: "₱ 600" },
+            "alkaline phosphatase": { price: 550, display: "₱ 550" },
+            "acid phosphatase": { price: 700, display: "₱ 700" },
+            "lipase": { price: 650, display: "₱ 650" },
+            "total cpk": { price: 950, display: "₱ 950" },
+            "cpk-mb": { price: 950, display: "₱ 950" },
+            "cpk-mm": { price: 1600, display: "₱ 1,600" },
+            "troponin i (qualitative)": { price: 1400, display: "₱ 1,400" },
+            "troponin i (quantitative)": { price: 2500, display: "₱ 2,500" },
+            "troponin t": { price: 1450, display: "₱ 1,450" },
+            "ldh": { price: 450, display: "₱ 450" },
+            "complete blood count(cbc)": { price: 300, display: "₱ 300" },
+            "cbc w/ platelet count": { price: 350, display: "₱ 350" },
+            "apc": { price: 350, display: "₱ 350" },
+            "hemoglobin(hgb) & hematocrit (hct)": { price: 250, display: "₱ 250" },
+            "reticulocyte count": { price: 300, display: "₱ 300" },
+            "esr": { price: 600, display: "₱ 600" },
+            "abo typing(blood typing)": { price: 250, display: "₱ 250" },
+            "rh typing": { price: 250, display: "₱ 250" },
+            "pbs": { price: 650, display: "₱ 650" },
+            "malarial smear": { price: 500, display: "₱ 500" },
+            "protime": { price: 550, display: "₱ 550" },
+            "aptt": { price: 550, display: "₱ 550" },
+            "rpr": { price: 350, display: "₱ 350" },
+            "quarter rpr": { price: 600, display: "₱ 600" },
+            "syphillis screening": { price: 350, display: "₱ 350" },
+            "tpha-screening": { price: 500, display: "₱ 500" },
+            "tpha with titer": { price: 1000, display: "₱ 1,000" },
+            "widal test": { price: 500, display: "₱ 500" },
+            "thypidot": { price: 1300, display: "₱ 1,300" },
+            "aso titer": { price: 700, display: "₱ 700" },
+            "crp": { price: 750, display: "₱ 750" },
+            "ra/rf latex": { price: 350, display: "₱ 350" },
+            "c3": { price: 1200, display: "₱ 1,200" },
+            "c4": { price: 1200, display: "₱ 1,200" },
+            "ana screening": { price: 950, display: "₱ 950" },
+            "ana with titer": { price: 1700, display: "₱ 1,700" },
+            "dengue igm/igg": { price: 1400, display: "₱ 1,400" },
+            "dengue antigen(ns1)": { price: 2800, display: "₱ 2,800" },
+            "dengue duo": { price: 2300, display: "₱ 2,300" },
+            "leptospiral test": { price: 1700, display: "₱ 1,700" },
+            "h-pylori test": { price: 1700, display: "₱ 1,700" },
+            "(ua) urinalysis": { price: 60, display: "₱ 60" },
+            "(fa) fecalysis": { price: 60, display: "₱ 60" },
+            "micro-albumin test": { price: 650, display: "₱ 650" },
+            "ketone": { price: 400, display: "₱ 400" },
+            "acetone": { price: 400, display: "₱ 400" },
+            "bile": { price: 400, display: "₱ 400" },
+            "nitrates": { price: 400, display: "₱ 400" },
+            "bilirubin": { price: 400, display: "₱ 400" },
+            "sugar": { price: 400, display: "₱ 400" },
+            "urobilinogen": { price: 400, display: "₱ 400" },
+            "preg. test (urine)": { price: 300, display: "₱ 300" },
+            "preg. test (serum)": { price: 500, display: "₱ 500" },
+            "occult blood": { price: 350, display: "₱ 350" },
+            "concentration technique": { price: 350, display: "₱ 350" },
+            "body fluids": { price: 900, display: "₱ 900" },
+            "cell & diff count": { price: 400, display: "₱ 400" },
+            "protein": { price: 550, display: "₱ 550" },
+            "(na) sodium": { price: 400, display: "₱ 400" },
+            "(k) potassium": { price: 400, display: "₱ 400" },
+            "chloride": { price: 400, display: "₱ 400" },
+            "creatinine total": { price: 700, display: "₱ 700" },
+            "creatinine clearance": { price: 950, display: "₱ 950" },
+            "t3": { price: 650, display: "₱ 650" },
+            "t4": { price: 650, display: "₱ 650" },
+            "tsh": { price: 850, display: "₱ 850" },
+            "t3, t4, and tsh package": { price: 2000, display: "₱ 2,000" },
+            "ft3": { price: 850, display: "₱ 850" },
+            "ft4": { price: 850, display: "₱ 850" },
+            "ft3, ft4 and tsh package": { price: 3000, display: "₱ 3,000" },
+            "irma tsh": { price: 2500, display: "₱ 2,500" },
+            "afp": { price: 1300, display: "₱ 1,300" },
+            "cea": { price: 1300, display: "₱ 1,300" },
+            "psa": { price: 2500, display: "₱ 2,500" },
+            "b-hcg": { price: 1500, display: "₱ 1,500" },
+            "ca 125 (ovary)": { price: 2800, display: "₱ 2,800" },
+            "ca 15-3 (breast)": { price: 3300, display: "₱ 3,300" },
+            "ca 19-9 (pancreas)": { price: 3400, display: "₱ 3,400" },
+            "fsh": { price: 1200, display: "₱ 1,200" },
+            "lh": { price: 1200, display: "₱ 1,200" },
+            "prolactin": { price: 1800, display: "₱ 1,800" },
+            "progesterone": { price: 3500, display: "₱ 3,500" },
+            "testorone": { price: 3500, display: "₱ 3,500" },
+            "cortisol": { price: 2500, display: "₱ 2,500" },
+            "ferritin": { price: 1400, display: "₱ 1,400" },
+            "hbsag screening": { price: 300, display: "₱ 300" },
+            "hbsag with titer (elisa)": { price: 650, display: "₱ 650" },
+            "anti-hbs with titer": { price: 650, display: "₱ 650" },
+            "hbeag": { price: 850, display: "₱ 850" },
+            "anti-hbe": { price: 700, display: "₱ 700" },
+            "anti-hbc igm": { price: 700, display: "₱ 700" },
+            "anti-hbc igg": { price: 700, display: "₱ 700" },
+            "anti-hav igm": { price: 700, display: "₱ 700" },
+            "anti-hav igg": { price: 700, display: "₱ 700" },
+            "anti-hcv": { price: 1000, display: "₱ 1,000" },
+            "hepatitis a profile (8 & 9)": { price: 2600, display: "₱ 2,600" },
+            "hepatitis b profile (2-7)": { price: 1700, display: "₱ 1,700" },
+            "hepatitis a, b, c profile (2-10)": { price: 3000, display: "₱ 3,000" },
+            "gramstain": { price: 450, display: "₱ 450" },
+            "afb": { price: 600, display: "₱ 600" },
+            "koh": { price: 350, display: "₱ 350" },
+            "blood c/s": { price: 1500, display: "₱ 1,500" },
+            "culture & sensitivity": { price: 1350, display: "₱ 1,350" },
+            "cult&sens. w/ard pedia": { price: 1500, display: "₱ 1,500" },
+            "cult&sens. w/ard adult": { price: 1700, display: "₱ 1,700" },
+            "pap smear": { price: 950, display: "₱ 950" },
+            "cell block": { price: 1000, display: "₱ 1,000" },
+            "cell cytology": { price: 1000, display: "₱ 1,000" },
+            "fnab": { price: 1200, display: "₱ 1,200" },
+            "small": { price: 1500, display: "₱ 1,500" },
+            "medium": { price: 2000, display: "₱ 2,000" },
+            "large": { price: 2500, display: "₱ 2,500" },
+            "xl": { price: 2800, display: "₱ 2,800" },
+            "xxl": { price: 3000, display: "₱ 3,000" },
+            "estrogen (er) -progesterone (pr) receptor assay": { price: 16000, display: "₱ 16,000" },
+            "drug test (dt)": { price: 300, display: "₱ 300" },
+            "pregnancy test (pt)": { price: 250, display: "₱ 250" },
+            "hepa b test (hbsag)": { price: 300, display: "₱ 300" },
+            "audiometry": { price: 450, display: "₱ 450" },
+            "ishihara test": { price: 250, display: "₱ 250" },
+            "ecg": { price: 500, display: "₱ 500" },
+            "hepa a (HBa1c)": { price: 700, display: "₱ 700" },
+            "aplv": { price: 350, display: "₱ 350" },
+            "pt (urine)": { price: 250, display: "₱ 250" },
+            "pt (serum)": { price: 500, display: "₱ 500" },
+            "(b3) basic 3 (chest pa/ua/fa)": { price: 350, display: "₱ 350" },
+            "b3 + cbc": { price: 500, display: "₱ 500" },
+            "b3 + hepa b": { price: 650, display: "₱ 650" },
+            "(b5) basic 5 (chest pa/cbc/ ua/fa/p.e.)": { price: 500, display: "₱ 500" },
+            "b5 + drug test(dt)": { price: 650, display: "₱ 650" },
+            "b5 + hepa a": { price: 850, display: "₱ 850" },
+            "b5 + hepa b": { price: 650, display: "₱ 650" },
+            "b5 + drug test + hepa b": { price: 700, display: "₱ 700" },
+            "b5 + dt + pregnancy test": { price: 850, display: "₱ 850" },
+            "b5 + dt + hepa b + pt": { price: 950, display: "₱ 950" },
+            "b5 + dt + hepa a": { price: 1000, display: "₱ 1,000" },
+            "b5 + dt + hepa b + hepa a": { price: 1150, display: "₱ 1,150" },
+            "b5 + dt + hepa b + ecg": { price: 1150, display: "₱ 1,150" },
+            "b5 + dt + hepa b + ishihara": { price: 850, display: "₱ 850" },
+            "plain abdomen (adult)": { price: 700, display: "₱ 700" },
+            "plain abdomen (pedia)": { price: 500, display: "₱ 500" },
+            "plain kub": { price: 400, display: "₱ 400" },
+            "pns": { price: 400, display: "₱ 400" },
+            "scoliosis review": { price: 800, display: "₱ 800" },
+            "scout film (adult)": { price: 350, display: "₱ 350" },
+            "shoulder ap/la": { price: 500, display: "₱ 500" },
+            "skull ap/l": { price: 680, display: "₱ 680" },
+            "skull series": { price: 1500, display: "₱ 1,500" },
+            "thigh ap/l": { price: 510, display: "₱ 510" },
+            "thoracic cage": { price: 660, display: "₱ 660" },
+            "thoraco lumbar ap/l": { price: 1500, display: "₱ 1,500" },
+            "thoraco lumbar spine": { price: 1950, display: "₱ 1,950" },
+            "thumb ap/l": { price: 300, display: "₱ 300" },
+            "water's view": { price: 810, display: "₱ 810" },
+            "abdomen supine/upright": { price: 590, display: "₱ 590" },
+            "abdomen - esophagram": { price: 4850, display: "₱ 4,850 (Pedia)" },
+            "ankle ap/l": { price: 450, display: "₱ 450" },
+            "apicolordotic view": { price: 300, display: "₱ 300" },
+            "arm ap/l": { price: 350, display: "₱ 350" },
+            "caldwell's view": { price: 450, display: "₱ 450" },
+            "cervical spine": { price: 1120, display: "₱ 1,120" },
+            "cervico thoracic ap/l": { price: 1100, display: "₱ 1,100" },
+            "chest pa": { price: 250, display: "₱ 250" },
+            "chest pa/l (adult & pedia)": { price: 500, display: "Adult: 500 / Pedia: 450" },
+            "chest pa/l adult": { price: 500, display: "₱ 500" },
+            "chest pa/l pedia": { price: 450, display: "₱ 450" },
+            "clavicle/scapula": { price: 450, display: "₱ 450" },
+            "coccyx ap/l": { price: 450, display: "₱ 450" },
+            "elbow ap/l": { price: 600, display: "₱ 600" },
+            "face bilateral": { price: 1300, display: "₱ 1,300" },
+            "femur ap/l": { price: 600, display: "₱ 600" },
+            "foot ap/l": { price: 450, display: "₱ 450" },
+            "frog leg": { price: 300, display: "₱ 300" },
+            "forearm ap/l": { price: 400, display: "₱ 400" },
+            "hand ap/o": { price: 400, display: "₱ 400" },
+            "hand ap/l": { price: 400, display: "₱ 400" },
+            "hip joint / hip ap/l bilateral": { price: 1200, display: "₱ 1,200" },
+            "hip joint / hip ap/l regular": { price: 700, display: "₱ 700" },
+            "knee ap/l": { price: 500, display: "₱ 500" },
+            "lateral decubitus": { price: 550, display: "₱ 550" },
+            "leg ap/l": { price: 500, display: "₱ 500" },
+            "ls spine ap/l/o regular": { price: 1200, display: "₱ 1,200" },
+            "lumbosacral ap/l regular": { price: 1100, display: "₱ 1,100" },
+            "lumbosacral ap/l senior citizen": { price: 960, display: "₱ 960" },
+            "wrist ap/l": { price: 300, display: "₱ 300" },
+            "chest pa for pregnant w/ abdominal shield": { price: 500, display: "₱ 500" },
+            "barium enema": { price: 3500, display: "₱ 3,500" },
+            "barium swallow": { price: 1500, display: "₱ 1,500" },
+            "cholangiogram": { price: 3500, display: "₱ 3,500" },
+            "kub - ivp (w/o dye)": { price: 3800, display: "₱ 3,800" },
+            "kub - ivp (w/dye)": { price: 5800, display: "₱ 5,800" },
+            "upper gi series": { price: 4800, display: "₱ 4,800" },
+            "baby gram": { price: 650, display: "₱ 650" },
+            "spot film": { price: 300, display: "₱ 300" },
+            "appendix (whole abdomen) female": { price: 1700, display: "₱ 1,700" },
+            "appendix (whole abdomen) male": { price: 2500, display: "₱ 2,500" },
+            "breast bilateral": { price: 1500, display: "₱ 1,500" },
+            "biophysical scoring": { price: 700, display: "₱ 700 - 800" },
+            "chest with mapping": { price: 1700, display: "₱ 1,700" },
+            "chest with mapping sca": { price: 1500, display: "₱ 1,500" },
+            "extremities": { price: 1200, display: "₱ 1,200 - 1,300" },
+            "gallbladder": { price: 700, display: "₱ 700 - 800" },
+            "hbt": { price: 1500, display: "₱ 1,500" },
+            "hbt with pancreas": { price: 1700, display: "₱ 1,700" },
+            "inguinal": { price: 2500, display: "₱ 2,500" },
+            "inguinal senior citizen": { price: 1250, display: "₱ 1,250" },
+            "inguinal / scrotal": { price: 2500, display: "₱ 2,500" },
+            "kub": { price: 1000, display: "₱ 1,000 - 1,500" },
+            "kub with post void": { price: 1500, display: "₱ 1,500" },
+            "kub with prostate": { price: 2500, display: "₱ 2,500" },
+            "kub with prostate senior citizen": { price: 2000, display: "₱ 2,000" },
+            "liver": { price: 500, display: "₱ 500 - 600" },
+            "lower abdomen": { price: 1500, display: "₱ 1,500" },
+            "pancreas": { price: 500, display: "₱ 500 - 600" },
+            "pelvic": { price: 500, display: "₱ 500" },
+            "prostate": { price: 850, display: "₱ 850 - 950" },
+            "scrotum": { price: 1200, display: "₱ 1,200 - 1,300" },
+            "spleen": { price: 500, display: "₱ 500 - 800" },
+            "soft tissue": { price: 1250, display: "₱ 1,250" },
+            "thyroid / neck": { price: 1200, display: "₱ 1,200" },
+            "transrectal": { price: 1000, display: "₱ 1,000 - 1,200" },
+            "transvaginal": { price: 700, display: "₱ 700" },
+            "upper abdomen": { price: 1000, display: "₱ 1,000 - 1,500" },
+            "urinary bladder": { price: 500, display: "₱ 500" },
+            "kidney": { price: 1200, display: "₱ 1,200" },
+            "whole abdomen w/ prostate / other add-ons": { price: 2500, display: "₱ 2,500" },
+            "buntis package 1 (cbc / ua / hbsag)": { price: 600, display: "₱ 600" },
+            "buntis package 2 (cbc / ua / hbsag / vdrl)": { price: 900, display: "₱ 900" },
+            "buntis package 3 (cbc / ua / hbsag / pelvic utz)": { price: 1000, display: "₱ 1,000" },
+            "buntis package 4 (cbc / ua / hbsag / vdrl / blood typing)": { price: 900, display: "₱ 900" },
+            "buntis package 5 (cbc / ua / hbsag / vdrl / blood typing / ogct)": { price: 1150, display: "₱ 1,150" },
+            "buntis package 6 (cbc / ua / hbsag / vdrl / blood typing / hiv screening / fbs)": { price: 2000, display: "₱ 2,000" },
+            "hypertension package (cbc / fbs / crea / uric acid / ua / ecg / chest pa / lipid profile)": { price: 2300, display: "₱ 2,300" },
+            "diabetes package (fbs / hba1c / crea / sgpt/alt / lipid profile / micral test / ua)": { price: 3300, display: "₱ 3300" },
+            "women's health package (cbc / ua / breast utz / ecg / pap smear)": { price: 2500, display: "₱ 2,500" }
+        };
+
+        let currentCart = [];
+        let seniorCart = [];
+        let selectedTestKey = null;
+
+        function handleInput() {
+            const query = document.getElementById('searchInput').value.trim().toLowerCase();
+            const resultDiv = document.getElementById('result');
+            const suggestionsDiv = document.getElementById('suggestions');
+            suggestionsDiv.innerHTML = '';
+            selectedTestKey = null;
+
+            if (query === "") {
+                resultDiv.innerHTML = `<span class="placeholder-text">Start typing to inspect a test...</span>`;
+                return;
+            }
+
+            const matches = Object.keys(testPrices).filter(item => item.includes(query));
+
+            if (matches.length > 0) {
+                if (matches.length < 15 && query.length > 1) {
+                    matches.forEach(match => {
+                        const div = document.createElement('div');
+                        div.className = 'suggestion-item';
+                        const textSpan = document.createElement('span');
+                        textSpan.textContent = match.toUpperCase();
+                        const priceSpan = document.createElement('span');
+                        priceSpan.className = 'suggestion-price';
+                        priceSpan.textContent = testPrices[match].display;
+                        div.appendChild(textSpan);
+                        div.appendChild(priceSpan);
+                        
+                        div.onclick = function() {
+                            addToCart(match);
+                            document.getElementById('searchInput').value = '';
+                            document.getElementById('result').innerHTML = `<span class="placeholder-text">Start typing to inspect a test...</span>`;
+                            suggestionsDiv.innerHTML = '';
+                            selectedTestKey = null;
+                        };
+                        suggestionsDiv.appendChild(div);
+                    });
+                }
+
+                if (testPrices.hasOwnProperty(query)) {
+                    selectTest(query);
+                } else {
+                    resultDiv.innerHTML = `<span class="placeholder-text" style="color: #64748b;">Matching tests found. Press Enter or click suggestion to add.</span>`;
+                }
+            } else {
+                resultDiv.innerHTML = `<span class="not-found">Test not found in price list.</span>`;
+            }
+        }
+
+        function selectTest(key) {
+            selectedTestKey = key;
+            const resultDiv = document.getElementById('result');
+            const data = testPrices[key];
+            let html = `
+                <span class="test-name-display">${key.toUpperCase()}:</span>
+                <span class="price-tag">${data.display}</span>
+            `;
+            if (data.promo) {
+                html += `<span class="promo-tag">${data.promo}</span>`;
+            }
+            resultDiv.innerHTML = html;
+        }
+
+        function handleKeyDown(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                const query = document.getElementById('searchInput').value.trim().toLowerCase();
+                let keyToAdd = selectedTestKey;
+                if (!keyToAdd && testPrices.hasOwnProperty(query)) {
+                    keyToAdd = query;
+                }
+                if (keyToAdd && testPrices.hasOwnProperty(keyToAdd)) {
+                    addToCart(keyToAdd);
+                    document.getElementById('searchInput').value = '';
+                    document.getElementById('result').innerHTML = `<span class="placeholder-text">Start typing to inspect a test...</span>`;
+                    document.getElementById('suggestions').innerHTML = '';
+                    selectedTestKey = null;
+                }
+            }
+        }
+
+        function addToCart(key) {
+            const itemData = testPrices[key];
+            currentCart.push({ key: key, name: key.toUpperCase(), price: itemData.price, display: itemData.display });
+            updateAllCarts();
+        }
+
+        function removeFromCart(index) {
+            currentCart.splice(index, 1);
+            updateAllCarts();
+        }
+
+        function removeFromSeniorCart(index) {
+            seniorCart.splice(index, 1);
+            updateAllCarts();
+        }
+
+        // Drag and Drop Management
+        let draggedFrom = null; // 'regular' or 'senior'
+
+        function dragStartRegular(event, index) {
+            draggedFrom = 'regular';
+            event.dataTransfer.setData("text/plain", index);
+        }
+
+        function dragStartSenior(event, index) {
+            draggedFrom = 'senior';
+            event.dataTransfer.setData("text/plain", index);
+        }
+
+        function allowDrop(event, boxId) {
+            event.preventDefault();
+            document.getElementById(boxId).classList.add('drag-over');
+        }
+
+        function removeDragOver(event, boxId) {
+            document.getElementById(boxId).classList.remove('drag-over');
+        }
+
+        function dropToDiscount(event) {
+            event.preventDefault();
+            document.getElementById('discountBox').classList.remove('drag-over');
+            const index = event.dataTransfer.getData("text/plain");
+            
+            if (draggedFrom === 'regular' && index !== "" && currentCart[index]) {
+                const item = currentCart[index];
+                seniorCart.push(item);
+                currentCart.splice(index, 1);
+                updateAllCarts();
+            }
+        }
+
+        function dropToRegular(event) {
+            event.preventDefault();
+            document.getElementById('orderBox').classList.remove('drag-over');
+            const index = event.dataTransfer.getData("text/plain");
+            
+            if (draggedFrom === 'senior' && index !== "" && seniorCart[index]) {
+                const item = seniorCart[index];
+                currentCart.push(item);
+                seniorCart.splice(index, 1);
+                updateAllCarts();
+            }
+        }
+
+        function updateAllCarts() {
+            // 1. Update Regular Cart UI
+            const orderList = document.getElementById('orderList');
+            const totalAmountSpan = document.getElementById('totalAmount');
+            let regularTotal = 0;
+
+            if (currentCart.length === 0) {
+                orderList.innerHTML = `<li class="empty-order">No tests added yet</li>`;
+                totalAmountSpan.textContent = "₱0.00";
+            } else {
+                let html = '';
+                currentCart.forEach((item, index) => {
+                    regularTotal += item.price;
+                    html += `
+                        <li class="order-item" draggable="true" ondragstart="dragStartRegular(event, ${index})">
+                            <div class="order-item-details">
+                                <span class="order-item-name">${item.name}</span>
+                                <span class="order-item-price">${item.display}</span>
+                            </div>
+                            <button class="remove-btn" onclick="removeFromCart(${index})" title="Remove">&times;</button>
+                        </li>
+                    `;
+                });
+                orderList.innerHTML = html;
+                totalAmountSpan.textContent = "₱ " + regularTotal.toLocaleString();
+            }
+
+            // 2. Update Senior Cart UI
+            const discountList = document.getElementById('discountList');
+            const subtotalSpan = document.getElementById('discountSubtotal');
+            const discountAmountSpan = document.getElementById('discountAmount');
+            const seniorTotalSpan = document.getElementById('seniorTotalAmount');
+            let seniorSubtotal = 0;
+
+            if (seniorCart.length === 0) {
+                discountList.innerHTML = `<li class="empty-order">Drag items here</li>`;
+                subtotalSpan.textContent = "₱0.00";
+                discountAmountSpan.textContent = "₱0.00";
+                seniorTotalSpan.textContent = "₱0.00";
+            } else {
+                let html = '';
+                seniorCart.forEach((item, index) => {
+                    seniorSubtotal += item.price;
+                    html += `
+                        <li class="discount-item" draggable="true" ondragstart="dragStartSenior(event, ${index})">
+                            <div class="discount-item-details">
+                                <span class="discount-item-name">${item.name}</span>
+                                <span class="discount-item-price">${item.display}</span>
+                            </div>
+                            <button class="remove-btn" onclick="removeFromSeniorCart(${index})" title="Remove">&times;</button>
+                        </li>
+                    `;
+                });
+                const discount = seniorSubtotal * 0.20;
+                const seniorNet = seniorSubtotal - discount;
+
+                discountList.innerHTML = html;
+                subtotalSpan.textContent = "₱ " + seniorSubtotal.toLocaleString();
+                discountAmountSpan.textContent = "- ₱ " + discount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                seniorTotalSpan.textContent = "₱ " + seniorNet.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            }
+
+            // 3. Update Combined Summary Box
+            const summaryRegular = document.getElementById('summaryRegular');
+            const summarySenior = document.getElementById('summarySenior');
+            const combinedTotalAmount = document.getElementById('combinedTotalAmount');
+
+            const seniorDiscountValue = seniorSubtotal * 0.20;
+            const seniorNetTotal = seniorSubtotal - seniorDiscountValue;
+            const combinedNet = regularTotal + seniorNetTotal;
+
+            summaryRegular.textContent = "₱ " + regularTotal.toLocaleString();
+            summarySenior.textContent = "₱ " + seniorNetTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            combinedTotalAmount.textContent = "₱ " + combinedNet.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+    </script>
+    <script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js');
+  }
+</script>
+</body>
+</html>
